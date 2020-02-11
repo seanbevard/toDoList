@@ -1,13 +1,25 @@
 package toDoList;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+import toDoListEntity.ListItem;
 
 public class toDoList {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
+		//Create session factory
+		SessionFactory factory = new Configuration()
+								.configure("hibernate.cfg.xml")
+								.addAnnotatedClass(ListItem.class)
+								.buildSessionFactory();
 		//int to store menu choice
 		int menuOption = -1;		
 		
@@ -29,17 +41,56 @@ public class toDoList {
 			switch (menuOption) {
 				case 1:
 					//view list
-					if (toDoList.size() == 0) {
-						System.out.println("ToDo List is Empty!");
-					} else {
-						for(int i = 0; i < toDoList.size(); i++) {
-							int itemNumber = i+1;
-							System.out.println(itemNumber + ": " + toDoList.get(i).text);
+					//new code
+					try {
+						Session session = factory.getCurrentSession();
+						session.beginTransaction();
+						List<ListItem> allItems = session.createQuery("from listitems").list();
+						for (ListItem tempItem : allItems) {
+							System.out.println(tempItem);
 						}
+						session.getTransaction().commit();
+						session.close();
+//						if (allItems.size() == 0) {
+//							System.out.println("ToDo List is Empty!");
+//						} else {
+//							for(int i = 0; i < allItems.size(); i++) {
+//								int itemNumber = i+1;
+//								System.out.println(itemNumber + ": " + allItems.get(i).getText());							
+//							}
+//						}
 					}
+					catch(Exception exc) {
+						 
+					} finally {
+						factory.close();
+					}
+
+					//new code
 					break;
 				case 2:
-					//Add ToDo Item
+					//Add ToDo Item	
+					try {
+						System.out.println("Enter your todo Item: ");
+						Scanner scan2 = new Scanner(System.in);
+						String input = scan2.nextLine();
+						ListItem item = new ListItem(input);
+						
+						//start session
+						Session session = factory.getCurrentSession();
+						session.beginTransaction();
+						session.save(item);
+						session.getTransaction().commit();
+						System.out.println("Item added!");
+						session.close();
+						break;
+						
+						
+					}
+					catch(Exception exc) {
+						factory.close();
+					}
+					
 					System.out.println("Enter your todo Item: ");
 					Scanner scan2 = new Scanner(System.in);
 					String input = scan2.nextLine();
@@ -67,13 +118,7 @@ public class toDoList {
 			
 		}
 		System.out.println("Goodbye!");
-		
-		
-//		
-//		Scanner scan = new Scanner(System.in);
-//		System.out.println("Please enter a To-Do Item:");
-//		String todoItem = scan.nextLine();
-//		toDoList.add(todoItem);
+		factory.close();
 
 	}
 }
